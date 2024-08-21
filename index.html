@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPIO Control</title>
+<script>
+function updateGPIO(pin, value) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/?' + pin + '=' + value, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                // Response received successfully
+                console.log('Response from server:', xhr.responseText);
+                updateControls(xhr.responseText)
+                // Handle the response as needed
+            } else {
+                // Error handling
+                console.error('Error:', xhr.status);
+            }
+        }
+    };
+    xhr.send();
+}
+function updateControls(json)
+{
+    var data = JSON.parse(json)
+    document.getElementById('gpio4').value = data["4"]
+    document.getElementById('gpio5').value = data["5"]
+    console.log(data)
+    if((data.offTarget - data.localTime) > 0)
+    {
+        document.getElementById("countdown").innerHTML = "<strong>Light timed to shut off in <em>" + (data.offTarget  - data.localTime) + " minute" + ((data.offTarget - data.localTime) != 1 ? "s":"" + "</em>.</strong>")
+    }
+    else
+    {
+        if((data.offTarget - data.localTime) == 0)
+        {
+            document.getElementById("countdown").innerHTML = "<strong>Less than one minute left on timer.</strong>"
+        }
+        else
+        {
+            document.getElementById("countdown").innerHTML = "No shutdown timer set."
+        }
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    var gpio4Slider = document.getElementById('gpio4');
+    var gpio5Slider = document.getElementById('gpio5');
+
+    gpio4Slider.addEventListener('input', function() {
+        updateGPIO('gpio4', gpio4Slider.value);
+    });
+
+    gpio5Slider.addEventListener('input', function() {
+        updateGPIO('gpio5', gpio5Slider.value);
+    });
+    document.getElementById('timeoutForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+        var formData = new FormData(this);
+        updateGPIO('shutdown',formData.get("shutdown"))
+    })
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/state', true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                // Response received successfully
+                console.log('Response from server:', xhr.responseText);
+                updateControls(xhr.responseText)
+                // Handle the response as needed
+            } else {
+                // Error handling
+                console.error('Error:', xhr.status);
+            }
+        }
+    };
+    xhr.send();
+});
+</script>
+</head>
+<body>
+<h1>Lamp Control</h1>
+<form>
+<label for="gpio4">Bright Level:</label>
+<input type="range" id="gpio4" name="gpio4" min="0" max="1023" value="0" step="100"><br><br>
+<label for="gpio5">Warm Level:</label>
+<input type="range" id="gpio5" name="gpio5" min="0" max="1023" value="0" step="100"><br><br>
+</form>
+<h2>Shutdown timer:</h2>
+<div id="countdown"></div>
+<br>
+<form id="timeoutForm" method="get">
+<input type="radio" id="timeout0" name="shutdown" value="" checked>
+<label for="timeout0">No timeout</label><br>
+<input type="radio" id="timeout2" name="shutdown" value="2">
+<label for="timeout2">2 minutes</label><br>
+<input type="radio" id="timeout5" name="shutdown" value="5">
+<label for="timeout5">5 minutes</label><br>
+<input type="radio" id="timeout15" name="shutdown" value="15">
+<label for="timeout15">15 minutes</label><br>
+<input type="radio" id="timeout30" name="shutdown" value="30">
+<label for="timeout30">30 minutes</label><br><br>
+<input type="submit" value="Submit">
+</form>
+</body>
+</html>
