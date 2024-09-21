@@ -3,6 +3,57 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GPIO Control</title>
+<style>
+.toggle {
+	cursor: pointer;
+	display: inline-block;
+}
+.toggle-switch {
+	display: inline-block;
+	background: #ccc;
+	border-radius: 16px;
+	width: 58px;
+	height: 32px;
+	position: relative;
+	vertical-align: middle;
+	transition: background 0.25s;
+	&:before,
+	&:after {
+		content: "";
+	}
+	&:before {
+		display: block;
+		background: linear-gradient(to bottom, #fff 0%,#eee 100%);
+		border-radius: 50%;
+		box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+		width: 24px;
+		height: 24px;
+		position: absolute;
+		top: 4px;
+		left: 4px;
+		transition: left 0.25s;
+	}
+	.toggle:hover &:before {
+		background: linear-gradient(to bottom, #fff 0%,#fff 100%);
+		box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+	}
+	.toggle-checkbox:checked + & {
+		background: blue;
+		&:before {
+			left: 30px;
+		}
+	}
+}
+.toggle-checkbox {
+	position: absolute;
+	visibility: hidden;
+}
+.toggle-label {
+	margin-left: 5px;
+	position: relative;
+	top: 2px;
+}
+</style>
 <script>
 function updateGPIO(pin, value) {
     var xhr = new XMLHttpRequest();
@@ -27,6 +78,7 @@ function updateControls(json)
     var data = JSON.parse(json)
     document.getElementById('gpio4').value = data["4"]
     document.getElementById('gpio5').value = data["5"]
+    document.getElementById('on').checked = data.on?true:false
     console.log(data)
     if((data.offTarget - data.localTime) > 0)
     {
@@ -47,13 +99,16 @@ function updateControls(json)
 document.addEventListener('DOMContentLoaded', function() {
     var gpio4Slider = document.getElementById('gpio4');
     var gpio5Slider = document.getElementById('gpio5');
-
+    var onoff = document.getElementById("on")
     gpio4Slider.addEventListener('input', function() {
         updateGPIO('gpio4', gpio4Slider.value);
     });
 
     gpio5Slider.addEventListener('input', function() {
         updateGPIO('gpio5', gpio5Slider.value);
+    });
+    onoff.addEventListener('change', function(){
+        updateGPIO('on',onoff.checked?1:0)
     });
     document.getElementById('timeoutForm').addEventListener('submit', function(event) {
         event.preventDefault(); // Prevent default form submission
@@ -83,6 +138,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <body>
 <h1>Lamp Control</h1>
 <form>
+<label for="on">Light switch:
+    <input id="on" name="on" type="checkbox" class="toggle-checkbox"><div class="toggle-switch"></div>
+</label><br><br>
 <label for="gpio4">Bright Level:</label>
 <input type="range" id="gpio4" name="gpio4" min="0" max="1023" value="0" step="100"><br><br>
 <label for="gpio5">Warm Level:</label>
